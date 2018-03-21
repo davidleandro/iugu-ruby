@@ -20,20 +20,25 @@ require_relative 'iugu/charge'
 require_relative 'iugu/plan'
 
 module Iugu
-  class AuthenticationException < StandardError
+  class Exception < StandardError
+    attr_reader :response
+    def initialize(message, response = nil)
+      super(message)
+      @response = response
+    end
   end
+  class AuthenticationException < Exception; end
 
-  class RequestFailed < StandardError
-  end
+  class RequestFailed < Exception; end
 
-  class ObjectNotFound < StandardError
-  end
+  class ObjectNotFound < Exception; end
 
-  class RequestWithErrors < StandardError
-    attr_accessor :errors
+  class RequestWithErrors < Exception
+    attr_reader :errors
 
-    def initialize(errors)
+    def initialize(errors, response = nil)
       @errors = errors
+      @response = response
     end
   end
 

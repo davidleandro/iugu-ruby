@@ -13,12 +13,12 @@ module Iugu
 
     def self.send_request(method, url, data)
       RestClient::Request.execute build_request(method, url, data)
-    rescue RestClient::ResourceNotFound
-      raise ObjectNotFound
+    rescue RestClient::ResourceNotFound => ex
+      raise ObjectNotFound.new(ex.message, ex.response)
     rescue RestClient::UnprocessableEntity => ex
-      raise RequestWithErrors.new JSON.parse(ex.response)['errors']
+      raise RequestWithErrors.new(JSON.parse(ex.response)['errors'], ex.response)
     rescue RestClient::BadRequest => ex
-      raise RequestWithErrors.new JSON.parse(ex.response)['errors']
+      raise RequestWithErrors.new(JSON.parse(ex.response)['errors'], ex.response)
     end
 
     def self.build_request(method, url, data)
@@ -34,11 +34,15 @@ module Iugu
 
     def self.handle_response(response)
       response_json = JSON.parse(response.body)
-      raise ObjectNotFound if response_json.is_a?(Hash) && response_json['errors'] == 'Not Found'
-      raise RequestWithErrors, response_json['errors'] if response_json.is_a?(Hash) && response_json['errors'] && response_json['errors'].length > 0
+      if response_json.is_a?(Hash) && response_json['errors'] == 'Not Found'
+        raise ObjectNotFound.new(response.body)
+      end
+      if response_json.is_a?(Hash) && response_json['errors'] && response_json['errors'].length > 0
+        raise RequestWithErrors.new(response_json['errors'], response.body)
+      end
       response_json
     rescue JSON::ParserError
-      raise RequestFailed
+      raise RequestFailed.new(response.body)
     end
 
     def self.default_headers

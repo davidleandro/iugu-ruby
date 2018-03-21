@@ -1,5 +1,7 @@
 module Iugu
   class APIResource < Iugu::Object
+    attr_accessor :response
+
     def self.url(options = nil)
       endpoint_url + self.relative_url(options)
     end
